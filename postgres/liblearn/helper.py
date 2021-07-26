@@ -106,24 +106,31 @@ def set_dataset_header(*args, **kwargs):
 
 """ 
 create_txt_dataset(
-    file_path,      # stirng: '/home/rohwid/GitHub/learn-databases/files/tab_separated_data_large.tsv'
-    env_list,       # list: ['pacmann', 'pacmann123', '0.0.0.0', '30000', 'service_db']
-    table_name,     # string: 'tb_service'
-    column_names,   # list: [column1, column2] (optional)
-    header=None,    # bolean: True/False
-    delim=None      # sting: 'whitespace', '\n', and '\t'
+    file_path,      # stirng: '/home/rohwid/GitHub/learn-databases/files/tab_separated_data_large.tsv'.
+    env_list,       # list: ['pacmann', 'pacmann123', '0.0.0.0', '30000', 'service_db'].
+    table_name,     # string: 'tb_service'.
+    column_names,   # list: [column1, column2] (optional).
+    header=None,    # bolean: True/False.
+    delim=None      # string: 'whitespace', '\n', or '\t'.
+    data_type=None  # string: 'dataframe' or 'file'.
 ) 
 """
 def create_dataset_pandas(*args, **kwargs):
     env_list = args[1]
     table_name = args[2]
 
-    if kwargs['header'] == False or kwargs['header'] == None:
-        df = set_dataset_header(args[0], args[3], **kwargs)
-    elif(kwargs['header'] == True):
-        df = set_dataset_header(args[0], **kwargs)
+    if kwargs['data_type'] == 'file':
+        if kwargs['header'] == False or kwargs['header'] == None:
+            df = set_dataset_header(args[0], args[3], **kwargs)
+        elif(kwargs['header'] == True):
+            df = set_dataset_header(args[0], **kwargs)
+        else:
+            print('[ERROR] Header option unknown.')
+            quit()
+    elif kwargs['data_type'] == 'dataframe':
+        df = args[0]
     else:
-        print('[ERROR] Header option unknown.')
+        print('[ERROR] Data type unknown.')
         quit()
 
     engine = create_engine(
@@ -134,7 +141,7 @@ def create_dataset_pandas(*args, **kwargs):
     connection = engine.connect()
 
     try:
-        df.to_sql(table_name, connection, if_exists="fail")
+        df.to_sql(table_name, connection, if_exists='replace', index=True, chunksize=2000)
     except ValueError as val_err:
         print(val_err)
     except Exception as err:
@@ -143,31 +150,6 @@ def create_dataset_pandas(*args, **kwargs):
         print(f"PostgreSQL Table {table_name} has been created successfully.")
     finally:
         connection.close()
-
-
-def encode_unicode(sentence):
-    return sentence.encode('unicode_escape').decode('utf-8')
-
-
-def decode_unicode(sentence):
-    return sentence.encode().decode('unicode-escape')
-
-
-def convert_ner_dataset_to_db(input_file, output_file):
-    lines = open(input_file).readlines()
-    res_file = []
-    res_sentence = ''
-    
-    for line in lines:
-        if line.strip() == '':
-            res_sentence = res_sentence + line.strip()
-            res_file.append(encode_unicode(res_sentence) + '\n')
-            res_sentence = ''
-        else:
-            res_sentence = res_sentence + line.strip() + '\n'
-    res_file.append(encode_unicode(res_sentence))
-    
-    open(output_file, 'w+').write(''.join(res_file))
 
 
 def convert_db_to_ner_dataset(input_file, output_file):
@@ -225,4 +207,32 @@ def clean_header_index(file_path, **kwargs):
         df.to_csv(file_path, index=None, header=None, sep=kwargs['delim'])
     else:
         print("[ERROR] Invalid header value.")
+
+
+# Custom Dataset Handler for NER
+
+def encode_unicode(sentence):
+    return sentence.encode('unicode_escape').decode('utf-8')
+
+
+def decode_unicode(sentence):
+    return sentence.encode().decode('unicode-escape')
+
+
+def convert_ner_input_to_db(dataset):
+    lines = open(dataset).readlines()
+    res_file = []
+    res_sentence = ''
+    for line in lines:
+        if line.strip() != '':
+            ln = '\t'.join(line.strip().split()) + '\n'
+            res_sentence += ln
+        elif line.strip() == '' and res_sentence == '':
+            continue
+        elif line.strip() == '':
+            res_file.append(encode_unicode(res_sentence) + '\n')
+            res_sentence = ''
+    res_file.append(encode_unicode(res_sentence))
+
+    return pd.DataFrame(res_file, columns=['Sentences'])
 

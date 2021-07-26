@@ -1,6 +1,5 @@
 import os
 import psycopg2
-import pandas as pd
 
 from liblearn import helper
 
