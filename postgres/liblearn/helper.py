@@ -105,65 +105,7 @@ def set_dataset_header(*args, **kwargs):
 
 
 """ 
-create_txt_dataset(
-    file_path,      # stirng: '/home/rohwid/GitHub/learn-databases/files/tab_separated_data_large.tsv'.
-    env_list,       # list: ['pacmann', 'pacmann123', '0.0.0.0', '30000', 'service_db'].
-    table_name,     # string: 'tb_service'.
-    column_names,   # list: [column1, column2] (optional).
-    header=None,    # bolean: True/False.
-    delim=None      # string: 'whitespace', '\n', or '\t'.
-    data_type=None  # string: 'dataframe' or 'file'.
-) 
-"""
-def create_dataset_pandas(*args, **kwargs):
-    env_list = args[1]
-    table_name = args[2]
-
-    if kwargs['data_type'] == 'file':
-        if kwargs['header'] == False or kwargs['header'] == None:
-            df = set_dataset_header(args[0], args[3], **kwargs)
-        elif(kwargs['header'] == True):
-            df = set_dataset_header(args[0], **kwargs)
-        else:
-            print('[ERROR] Header option unknown.')
-            quit()
-    elif kwargs['data_type'] == 'dataframe':
-        df = args[0]
-    else:
-        print('[ERROR] Data type unknown.')
-        quit()
-
-    engine = create_engine(
-        f"postgresql+psycopg2://{env_list[0]}:{env_list[1]}@{env_list[2]}:{env_list[3]}/{env_list[4]}",  
-        pool_recycle=3600
-    )
-
-    connection = engine.connect()
-
-    try:
-        df.to_sql(table_name, connection, if_exists='replace', index=True, chunksize=2000)
-    except ValueError as val_err:
-        print(val_err)
-    except Exception as err:
-        print(err)
-    else:
-        print(f"PostgreSQL Table {table_name} has been created successfully.")
-    finally:
-        connection.close()
-
-
-def convert_db_to_ner_dataset(input_file, output_file):
-    lines = open(input_file).readlines()
-    res_file = []
-
-    for line in lines:
-        res_file.append(decode_unicode(line))
-
-    open(output_file, 'w+').write(''.join(res_file))
-
-
-""" 
-convert_csv_txt(
+csv_converter(
     file_path,          # stirng: '/home/rohwid/GitHub/learn-databases/files/tab_separated_data_large.tsv'
     column_names,       # list: [column1, column2] (optional)
     header=None,        # bolean: True/False
@@ -209,7 +151,57 @@ def clean_header_index(file_path, **kwargs):
         print("[ERROR] Invalid header value.")
 
 
+""" 
+create_dataset_pandas(
+    file_path,      # stirng: '/home/rohwid/GitHub/learn-databases/files/tab_separated_data_large.tsv'.
+    env_list,       # list: ['pacmann', 'pacmann123', '0.0.0.0', '30000', 'service_db'].
+    table_name,     # string: 'tb_service'.
+    columns_name,   # list or string: column1 or[column1, column2] (optional).
+    header=None,    # bolean: True/False.
+    delim=None      # string: 'whitespace', '\n', or '\t'.
+    data_type=None  # string: 'dataframe' or 'file'.
+) 
+"""
+def create_dataset_pandas(*args, **kwargs):
+    env_list = args[1]
+    table_name = args[2]
+
+    if kwargs['data_type'] == 'file':
+        if kwargs['header'] == False or kwargs['header'] == None:
+            df = set_dataset_header(args[0], args[3], **kwargs)
+        elif(kwargs['header'] == True):
+            df = set_dataset_header(args[0], **kwargs)
+        else:
+            print('[ERROR] Header option unknown.')
+            quit()
+    elif kwargs['data_type'] == 'dataframe':
+        df = args[0]
+    else:
+        print('[ERROR] Data type unknown.')
+        quit()
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{env_list[0]}:{env_list[1]}@{env_list[2]}:{env_list[3]}/{env_list[4]}",  
+        pool_recycle=3600
+    )
+
+    connection = engine.connect()
+
+    try:
+        df.to_sql(table_name, connection, if_exists='replace', index=True, chunksize=2000)
+    except ValueError as val_err:
+        print(val_err)
+    except Exception as err:
+        print(err)
+    else:
+        print(f"PostgreSQL Table {table_name} has been created successfully.")
+    finally:
+        connection.close()
+
+
+###########################################
 # Custom Dataset Handler for NER
+###########################################
 
 def encode_unicode(sentence):
     return sentence.encode('unicode_escape').decode('utf-8')
@@ -219,7 +211,7 @@ def decode_unicode(sentence):
     return sentence.encode().decode('unicode-escape')
 
 
-def convert_ner_input_to_db(dataset):
+def convert_ner_dataset(dataset, columns_name):
     lines = open(dataset).readlines()
     res_file = []
     res_sentence = ''
@@ -234,5 +226,19 @@ def convert_ner_input_to_db(dataset):
             res_sentence = ''
     res_file.append(encode_unicode(res_sentence))
 
-    return pd.DataFrame(res_file, columns=['Sentences'])
+    return pd.DataFrame(res_file, columns=[columns_name])
+
+
+def dump_ner_dataset(dataset, env_list, table_name, columns_name):
+    engine = create_engine(
+        f"postgresql+psycopg2://{env_list[0]}:{env_list[1]}@{env_list[2]}:{env_list[3]}/{env_list[4]}",  
+        pool_recycle=3600
+    )
+
+    connection = engine.connect()
+
+    df = pd.read_sql(f"SELECT {columns_name} FROM {table_name} order by index", connection)
+    sentences = df[columns_name].apply(lambda x: x.encode().decode('unicode-escape').strip()).values
+    sentences = '\n\n'.join(sentences)
+    open(dataset, 'w+').write(sentences)
 
