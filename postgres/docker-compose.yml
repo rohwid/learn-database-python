@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+
+    learn-postgres:
+        image: postgres:13.2-alpine
+        container_name: learn-postgres
+        ports:
+            - 5432:5432
+        volumes:
+            - ./docker/postgres:/docker-entrypoint-initdb.d
+        env_file:
+            - ./env_file/postgres.env
