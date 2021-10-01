@@ -1,7 +1,7 @@
 from liblearn import helper
 
 dir = '/home/rohwid/GitHub/learn-databases/postgres/files'
-env_list = ['learn', 'learn', '0.0.0.0', '5432', 'db_learn']
+env_list = ['learn', 'learn123', '0.0.0.0', '5432', 'db_learn']
 table_name = "tb_coba"
 
 if __name__ == '__main__':
