@@ -205,5 +205,4 @@ nccl_*
 *.DS_Store
 
 # Large datasets
-neural_network/data/datasets/*
-*_large*
+postgres/files/

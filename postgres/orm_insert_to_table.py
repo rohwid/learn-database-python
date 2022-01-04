@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 
 import psycopg2
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String

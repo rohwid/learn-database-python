@@ -91,7 +91,7 @@ def set_dataset_header(*args, **kwargs):
         elif kwargs['delim'] == '\n':
             df = pd.read_csv(args[0], sep='\n')
         elif kwargs['delim'] == '\t':
-            df = pd.read_csv(args[0], sep='\t')
+            df = pd.read_csv(args[0], sep=r'\t', encoding='utf-8')
         elif kwargs['delim'] == ',':
             df = pd.read_csv(args[0], sep=',')
         else:
