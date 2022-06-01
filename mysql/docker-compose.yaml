@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+
+    learn-sql:
+        image: mysql:5.7.16 
+        container_name: learn-mysql
+        environment:
+            MYSQL_DATABASE: learn_db
+            MYSQL_USER: learn
+            MYSQL_PASSWORD: learn123
+            MYSQL_ROOT_PASSWORD: root
+        ports:
+            - "3310:3306"
+        volumes:
+            - ./data:/var/lib/mysql

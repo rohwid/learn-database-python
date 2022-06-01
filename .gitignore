@@ -206,3 +206,6 @@ nccl_*
 
 # Large datasets
 postgres/files/
+
+# MySQL data
+mysql/data/

@@ -8,5 +8,9 @@ services:
             - 5440:5432
         volumes:
             - ./docker/postgres:/docker-entrypoint-initdb.d
+            - pg-data:/var/lib/postgresql/data
         env_file:
             - ./env_file/postgres.env
+        
+volumes:
+    pg-data:
