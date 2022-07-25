@@ -5,7 +5,7 @@ services:
         image: mysql:5.7.16 
         container_name: learn-mysql
         environment:
-            MYSQL_DATABASE: learn_db
+            MYSQL_DATABASE: db_learn
             MYSQL_USER: learn
             MYSQL_PASSWORD: learn123
             MYSQL_ROOT_PASSWORD: root
